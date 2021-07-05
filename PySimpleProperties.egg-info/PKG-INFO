@@ -6,7 +6,12 @@ Home-page: https://github.com/JariBou/PySimpleProperties
 Author: JariBou (Tomé Bourdié)
 Author-email: <bourdietome@gmail.com>
 License: LICENSE
-Description: A simple adaptation of java properties
+Description: A simple adaptation of java properties.
+        Includes a Properties objects manager to help in managing multiple objects, useful for example if you have multi language support.
+        GitHub repo: https://github.com/JariBou/PySimpleProperties
+        Feel free to contact me at my mail: bourdietome@gmail.com
+        
+        -JariBou (Tomé Bourdié)
 Keywords: python,properties
 Platform: UNKNOWN
 Classifier: Development Status :: 1 - Planning

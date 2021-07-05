@@ -3,7 +3,7 @@ import os
 
 here = os.path.abspath(os.path.dirname(__file__))
 
-VERSION = '0.0.8'
+VERSION = '0.0.9'
 DESCRIPTION = 'A simple adaptation of java properties'
 LONG_DESCRIPTION = """A simple adaptation of java properties.
 Includes a Properties objects manager to help in managing multiple objects, useful for example if you have multi language support.
