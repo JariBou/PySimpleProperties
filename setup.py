@@ -3,7 +3,7 @@ import os
 
 here = os.path.abspath(os.path.dirname(__file__))
 
-VERSION = '0.1.0'
+VERSION = '0.1.1'
 DESCRIPTION = 'A simple adaptation of java properties'
 LONG_DESCRIPTION = """A simple adaptation of java properties.
 Includes a Properties objects manager to help in managing multiple objects, useful for example if you have multi language support.
@@ -25,7 +25,7 @@ setup(
     packages=find_packages(),
     url='https://github.com/JariBou/PySimpleProperties',
     install_requires=[],
-    keywords=['python', 'properties'],
+    keywords=['python', 'properties', 'file manager'],
     classifiers=[
         "Development Status :: 1 - Planning",
         "Intended Audience :: Developers",
