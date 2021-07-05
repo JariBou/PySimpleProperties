@@ -18,15 +18,15 @@ class Properties:
         self.content = {}
         self.path = ''
         self.prev_key = ''
-        self.comment_char = kwargs.get('comment_char', '#')
         self.separator_char = kwargs.get('separator_char', '=')
+        self.comment_char = kwargs.get('comment_char', '#')
         if path:
             self.load(path, self.comment_char, self.separator_char)
 
     def __repr__(self):
         return f"<{self.__class__}, loaded_file: '{self.path if self.path else 'None'}'>"
 
-    def load(self, path: str, comment_char: str = '#', separator_char: str = '=') -> 'Properties':
+    def load(self, path: str, separator_char: str = '=', comment_char: str = '#') -> 'Properties':
         """ Loads Properties and stores them in a dict and returns the dict
         :param path: string path as relative {used with a context manager}
         :param comment_char: comment_char (default:#)
@@ -36,8 +36,8 @@ class Properties:
         self.content = {}
         self.path = path
         self.prev_key = ''
-        self.comment_char = comment_char
         self.separator_char = separator_char
+        self.comment_char = comment_char
         try:
             with open(path, 'r') as f:
                 strContent = f.readlines()
@@ -139,7 +139,8 @@ class Properties:
         """
         return self.content.__contains__(key)
 
-    def out(self, path: str, comment_char: str = '#', separator_char: str = '=', comments=None, comments_pos: str = 'top'):
+    def out(self, path: str, separator_char: str = '=', comment_char: str = '#' , comments=None,
+            comments_pos: str = 'top'):
         """Used to write a properties file
         :param path: string path as relative {used with a context manager}
         :param comment_char: comment_char (default:#)
@@ -151,7 +152,8 @@ class Properties:
         if comments is None:
             comments = []
         if not hasattr(comments, '__iter__'):
-            raise AttributeError(f"Comments type is not valid: not iterable. Given={comments.__class__} | Should be a list")
+            raise AttributeError(
+                f"Comments type is not valid: not iterable. Given={comments.__class__} | Should be a list")
         with open(path, 'w') as f:
             if comments and comments_pos == 'top':
                 for comment in comments:
@@ -189,6 +191,39 @@ class PropertiesHandler:
                f"selected_properties_class={self.curr_prop if self.curr_prop else 'None'}, " \
                f"list_of_childs={self.properties_dict}>"
 
+    def passFiles(self, files_list: list, input_order: str = 's,c') -> 'PropertiesHandler':
+        """Used when creating the object or to pass multiple files at once;
+        Multiple lists are valid, you can do a list with only paths or replace some paths wit a lsit containing the path,
+        followed by the separator character then followed by the comment character. (According to the input order,
+        defaults to separator then comment, can be changed by setting 'input_order' to 'c,s'.
+        :param files_list: a list of .properties files path. Can be used as [[path, separator_char, comment_char], [path, separator_char]]
+        :param input_order: defines the input order in sublists, separator character first or second (default=s,c)
+        :return: self so that it can be used to instantiate
+        """
+        for file in files_list:
+            if isinstance(file, list):
+                length = len(file)
+                if length == 1:
+                    self.addProperty(Properties(file[0]))
+                elif length == 2:
+                    if input_order == 'c,s':
+                        self.addProperty(Properties(file[0], comment_char=file[1]))
+                    else:
+                        self.addProperty(Properties(file[0], separator_char=file[1]))
+                elif length == 3:
+                    if input_order == 'c,s':
+                        self.addProperty(Properties(file[0], comment_char=file[1], separator_char=file[2]))
+                    else:
+                        self.addProperty(Properties(file[0], separator_char=file[1], comment_char=file[2]))
+
+            else:
+                try:
+                    self.addProperty(Properties(file))
+                except FileNotFoundError:
+                    print(f"File '{file}' not found")
+                    continue
+        return self
+
     def addProperty(self, prop: Properties, name: str = ''):
         """Adds a Properties object
         :param prop: Properties object
@@ -218,13 +253,15 @@ class PropertiesHandler:
             prop = self.properties_dict.get(name)
         elif isinstance(index, int):
             if len(self.properties_dict) <= index or index < -len(self.properties_dict):
-                raise IndexError(f"index '{index}' out of bounds: max={len(self.properties_dict) - 1}, min={-len(self.properties_dict)}")
+                raise IndexError(
+                    f"index '{index}' out of bounds: max={len(self.properties_dict) - 1}, min={-len(self.properties_dict)}")
             prop = self.properties_dict.get(list(self.properties_dict.keys())[index])
 
         if prop == self.curr_prop:
             curr_index = list(self.properties_dict.values()).index(prop)
             self.curr_prop = self.properties_dict.get(list(self.properties_dict.keys())
-                                                      [(curr_index - 1 if curr_index == len(self.properties_dict) else curr_index)])
+                                                      [(
+                    curr_index - 1 if curr_index == len(self.properties_dict) else curr_index)])
         return self.properties_dict.pop(list(self.properties_dict.keys())
                                         [list(self.properties_dict.values()).index(prop)])
 
@@ -240,7 +277,8 @@ class PropertiesHandler:
             self.curr_prop = self.properties_dict.get(name, None)
         elif isinstance(index, int):
             if len(self.properties_dict) <= index or index < -len(self.properties_dict):
-                raise IndexError(f"index '{index}' out of bounds: max={len(self.properties_dict)-1}, min={-len(self.properties_dict)}")
+                raise IndexError(
+                    f"index '{index}' out of bounds: max={len(self.properties_dict) - 1}, min={-len(self.properties_dict)}")
             self.curr_prop = self.properties_dict.get(list(self.properties_dict.keys())[index])
 
     def getProperty(self, **kwargs):
@@ -255,7 +293,8 @@ class PropertiesHandler:
             return self.properties_dict.get(name)
         elif isinstance(index, int):
             if len(self.properties_dict) <= index or index < -len(self.properties_dict):
-                raise IndexError(f"index '{index}' out of bounds: max={len(self.properties_dict) - 1}, min={-len(self.properties_dict)}")
+                raise IndexError(
+                    f"index '{index}' out of bounds: max={len(self.properties_dict) - 1}, min={-len(self.properties_dict)}")
             return self.properties_dict.get(list(self.properties_dict.keys())[index])
 
     def switchUp(self):

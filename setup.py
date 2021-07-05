@@ -3,7 +3,7 @@ import os
 
 here = os.path.abspath(os.path.dirname(__file__))
 
-VERSION = '0.0.4'
+VERSION = '0.0.7'
 DESCRIPTION = 'A simple adaptation of java properties'
 LONG_DESCRIPTION = 'A simple adaptation of java properties'
 
