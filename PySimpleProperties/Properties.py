@@ -1,6 +1,7 @@
 import copy
 from collections import KeysView, ValuesView
 from typing import Optional
+import os
 
 
 class Properties:
@@ -21,10 +22,13 @@ class Properties:
         self.separator_char = kwargs.get('separator_char', '=')
         self.comment_char = kwargs.get('comment_char', '#')
         if path:
-            self.load(path, self.comment_char, self.separator_char)
+            self.load(path, self.separator_char, self.comment_char)
 
     def __repr__(self):
         return f"<{self.__class__}, loaded_file: '{self.path if self.path else 'None'}'>"
+
+    def getPath(self) -> str:
+        return self.path
 
     def load(self, path: str, separator_char: str = '=', comment_char: str = '#') -> 'Properties':
         """ Loads Properties and stores them in a dict and returns the dict
@@ -34,16 +38,12 @@ class Properties:
         :return: Dict of content
         """
         self.content = {}
-        self.path = path
         self.prev_key = ''
-        self.separator_char = separator_char
-        self.comment_char = comment_char
         try:
             with open(path, 'r') as f:
                 strContent = f.readlines()
                 for line in strContent:
                     line = line.replace('\n', '').strip()
-
                     if self.prev_key != '':
                         self.content[self.prev_key] += ' ' + line
 
@@ -58,7 +58,10 @@ class Properties:
                         self.prev_key = ''
 
                 f.close()
-                self.prev_key = ''
+            self.prev_key = ''
+            self.path = path
+            self.separator_char = separator_char
+            self.comment_char = comment_char
         except FileNotFoundError as e:
             print(e)
         return self
@@ -67,7 +70,7 @@ class Properties:
         """Reloads the property file"""
         if not self.path:
             raise Exception('No path given, cannot reload properties')
-        self.load(self.path, self.comment_char, self.separator_char)
+        self.load(self.path, self.separator_char, self.comment_char)
 
     def getProperty(self, key: str) -> str:
         """Returns the key
@@ -139,7 +142,7 @@ class Properties:
         """
         return self.content.__contains__(key)
 
-    def out(self, path: str, separator_char: str = '=', comment_char: str = '#' , comments=None,
+    def out(self, path: str = None, separator_char: str = '=', comment_char: str = '#' , comments=None,
             comments_pos: str = 'top'):
         """Used to write a properties file
         :param path: string path as relative {used with a context manager}
@@ -149,6 +152,11 @@ class Properties:
         :type comments: list[str]
         :param comments_pos: position of the comments, must be 'top' or 'bottom'
         """
+        if path is None:
+            if self.path != '':
+                path = self.path
+            else:
+                return False
         if comments is None:
             comments = []
         if not hasattr(comments, '__iter__'):
@@ -169,6 +177,7 @@ class Properties:
 class PropertiesHandler:
     properties_dict: dict
     curr_prop: Optional[Properties]
+    directories_dict: dict
 
     def __init__(self, properties_list=None):
         """Creates a 'PropertiesHandler' object used to manage and switch easily between Properties objects,
@@ -178,6 +187,7 @@ class PropertiesHandler:
         if properties_list is None:
             properties_list = []
         self.properties_dict = {}
+        self.directories_dict = {}
         self.curr_prop = None
         if properties_list:
             for prop in properties_list:
@@ -223,6 +233,59 @@ class PropertiesHandler:
                     print(f"File '{file}' not found")
                     continue
         return self
+
+    def setDirectory(self, absolute_path: str):
+        if not absolute_path.endswith('\\'):
+            absolute_path += '\\'
+        self.directories_dict[absolute_path] = []
+        self.properties_dict = {}
+        self.curr_prop = None
+        for file in os.listdir(absolute_path):
+            if file.endswith(".properties"):
+                self.directories_dict[absolute_path].append(absolute_path + file)
+                self.addProperty(Properties(os.path.join(absolute_path + file)))
+
+    def addDirectory(self, absolute_path: str):
+        if not absolute_path.endswith('\\'):
+            absolute_path += '\\'
+        self.directories_dict[absolute_path] = []
+        for file in os.listdir(absolute_path):
+            if file.endswith(".properties"):
+                self.directories_dict[absolute_path].append(absolute_path + file)
+                self.addProperty(Properties(os.path.join(absolute_path + file)))
+
+    def removeDirectories(self):
+        for absolute_path in copy.deepcopy(list(self.directories_dict.keys())):
+            self.removeDirectory(absolute_path)
+
+    def removeDirectory(self, absolute_path: str):
+        if not absolute_path.endswith('\\'):
+            absolute_path += '\\'
+        if not absolute_path in self.directories_dict.keys():
+            raise AttributeError(f"Directory '{absolute_path}' isn't registered.")
+        for prop_path in self.directories_dict[absolute_path]:
+            prop = self._searchPropertyPath(prop_path)
+            self.properties_dict.pop(list(self.properties_dict.keys())
+                                     [list(self.properties_dict.values()).index(prop)])
+        self.directories_dict.pop(absolute_path)
+
+    def updateDirectories(self):
+        print('--------------------------------------')
+        for relative_path in self.directories_dict.keys():
+            for file in os.listdir(relative_path):
+                if file.endswith(".properties"):
+                    fileName = relative_path + file
+                    if fileName not in self.directories_dict[relative_path]:
+                        self.addProperty(Properties(os.path.join(relative_path + file)))
+                    else:
+                        print(self._searchPropertyPath(fileName))
+                        self._searchPropertyPath(fileName).reload()
+        print('--------------------------------------')
+
+    def _searchPropertyPath(self, path: str) -> Properties:
+        for prop in self.properties_dict.values():
+            if prop.getPath() == path:
+                return prop
 
     def addProperty(self, prop: Properties, name: str = ''):
         """Adds a Properties object
