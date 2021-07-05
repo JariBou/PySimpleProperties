@@ -5,7 +5,12 @@ here = os.path.abspath(os.path.dirname(__file__))
 
 VERSION = '0.0.8'
 DESCRIPTION = 'A simple adaptation of java properties'
-LONG_DESCRIPTION = 'A simple adaptation of java properties'
+LONG_DESCRIPTION = """A simple adaptation of java properties.
+Includes a Properties objects manager to help in managing multiple objects, useful for example if you have multi language support.
+GitHub repo: https://github.com/JariBou/PySimpleProperties
+Feel free to contact me at my mail: bourdietome@gmail.com
+
+-JariBou (Tomé Bourdié)"""
 
 # Setting up
 setup(
