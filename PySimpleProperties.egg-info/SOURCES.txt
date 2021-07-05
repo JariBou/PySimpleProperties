@@ -5,5 +5,4 @@ PySimpleProperties/__init__.py
 PySimpleProperties.egg-info/PKG-INFO
 PySimpleProperties.egg-info/SOURCES.txt
 PySimpleProperties.egg-info/dependency_links.txt
-PySimpleProperties.egg-info/requires.txt
 PySimpleProperties.egg-info/top_level.txt
