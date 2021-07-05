@@ -18,7 +18,7 @@ setup(
     long_description=LONG_DESCRIPTION,
     packages=find_packages(),
     url='https://github.com/JariBou/PySimpleProperties',
-    install_requires=['copy', 'collections'],
+    install_requires=[],
     keywords=['python', 'properties'],
     classifiers=[
         "Development Status :: 1 - Planning",
