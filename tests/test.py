@@ -8,4 +8,5 @@ print(ph.get())
 ph.removeProperty(index=-3)
 print(ph.get())
 print(ph.getContent())
+print(ph)
 

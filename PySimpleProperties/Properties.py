@@ -11,7 +11,7 @@ class Properties:
     separator_char: str
 
     def __init__(self, path: str = False, **kwargs):
-        """
+        """ Creates a Properties object used to manage a .properties file
         :param path: string path as relative {used with a context manager}
         :param kwargs: comment_char (default:#) and separator_char (default:=)
         """
@@ -169,6 +169,10 @@ class PropertiesHandler:
     curr_prop: Optional[Properties]
 
     def __init__(self, properties_list=None):
+        """Creates a 'PropertiesHandler' object used to manage and switch easily between Properties objects,
+        useful for supporting languages for example
+        :param properties_list: A list of Properties objects if you have one
+        """
         if properties_list is None:
             properties_list = []
         self.properties_dict = {}
@@ -180,7 +184,16 @@ class PropertiesHandler:
                     continue
                 self.addProperty(prop)
 
+    def __repr__(self):
+        return f"<{self.__class__.__name__} class, number_of_childs={len(self.properties_dict)}, " \
+               f"selected_properties_class={self.curr_prop if self.curr_prop else 'None'}, " \
+               f"list_of_childs={self.properties_dict}>"
+
     def addProperty(self, prop: Properties, name: str = ''):
+        """Adds a Properties object
+        :param prop: Properties object
+        :param name: name of the prop in the dict, will default to prop+a_number to fill the list
+        """
         if not name:
             num = 1
             name = 'prop' + str(num)
@@ -192,6 +205,10 @@ class PropertiesHandler:
             self.curr_prop = prop
 
     def removeProperty(self, **kwargs) -> Properties:
+        """Used to remove a Properties object, returns the removed Properties class
+        :param kwargs: name or index of the object in the internal dict
+        :return: the popped object
+        """
         name = kwargs.get('name', False)
         index = kwargs.get('index', False)
         prop: Optional[Properties] = None
@@ -212,6 +229,9 @@ class PropertiesHandler:
                                         [list(self.properties_dict.values()).index(prop)])
 
     def changeProperty(self, **kwargs):
+        """Used to change between Properties objects
+        :param kwargs: name or index of the object in the internal dict
+        """
         name = kwargs.get('name', False)
         index = kwargs.get('index', False)
         if name:
@@ -224,6 +244,9 @@ class PropertiesHandler:
             self.curr_prop = self.properties_dict.get(list(self.properties_dict.keys())[index])
 
     def getProperty(self, **kwargs):
+        """Used to get a Properties object
+        :param kwargs: name or index of the object in the internal dict
+        """
         name = kwargs.get('name', False)
         index = kwargs.get('index', False)
         if name:
@@ -236,23 +259,37 @@ class PropertiesHandler:
             return self.properties_dict.get(list(self.properties_dict.keys())[index])
 
     def switchUp(self):
+        """Switches to the next Properties object in the internal dict (or to the first one if the last is passed)"""
         curr_pos = list(self.properties_dict.values()).index(self.curr_prop)
         next_pos = curr_pos + 1 if curr_pos + 1 < len(self.properties_dict) else 0
         self.curr_prop = self.properties_dict.get(list(self.properties_dict.keys())[next_pos])
 
     def switchDown(self):
+        """Switches to the previous Properties object in the internal dict (or to the last one if the first is passed)"""
         curr_pos = list(self.properties_dict.values()).index(self.curr_prop)
         next_pos = len(self.properties_dict) - 1 if curr_pos - 1 < 0 else curr_pos - 1
         self.curr_prop = self.properties_dict.get(list(self.properties_dict.keys())[next_pos])
 
     def getProperties(self) -> ValuesView:
+        """Used to get the values (Properties objects) of the internal dict
+        :return: ValuesView of the internal dict
+        """
         return self.properties_dict.values()
 
     def getContent(self) -> dict:
+        """Used to get the internal dict
+        :return: The internal dict
+        """
         return self.properties_dict
 
     def getNames(self) -> KeysView:
+        """Used to get the keys (Properties objects name's in the dict) of the internal dict
+        :return: KeysView of the internal dict
+        """
         return self.properties_dict.keys()
 
     def get(self) -> Optional[Properties]:
+        """Used to get the current Properties object
+        :return: Current selected Properties object
+        """
         return self.curr_prop
