@@ -10,6 +10,7 @@ LONG_DESCRIPTION = 'A simple adaptation of java properties'
 # Setting up
 setup(
     name="PySimpleProperties",
+    license='LICENSE',
     version=VERSION,
     author="JariBou (Tomé Bourdié)",
     author_email="<bourdietome@gmail.com>",

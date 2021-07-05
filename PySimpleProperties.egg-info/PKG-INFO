@@ -1,11 +1,11 @@
 Metadata-Version: 2.1
 Name: PySimpleProperties
-Version: 0.0.4
+Version: 0.0.7
 Summary: A simple adaptation of java properties
 Home-page: https://github.com/JariBou/PySimpleProperties
 Author: JariBou (Tomé Bourdié)
 Author-email: <bourdietome@gmail.com>
-License: UNKNOWN
+License: LICENSE
 Description: A simple adaptation of java properties
 Keywords: python,properties
 Platform: UNKNOWN
