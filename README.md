@@ -1,3 +1,3 @@
-# PyProperties
+# PySimpleProperties
 
-An adaptation of java properties loader for python
+A simple adaptation of java properties loader for python
