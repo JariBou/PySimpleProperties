@@ -28,6 +28,9 @@ class Properties:
         return f"<{self.__class__}, loaded_file: '{self.path if self.path else 'None'}'>"
 
     def getPath(self) -> str:
+        """Used to get the path of the file stored
+        :return: str, the path of the file stored
+        """
         return self.path
 
     def load(self, path: str, separator_char: str = '=', comment_char: str = '#') -> 'Properties':
@@ -142,7 +145,7 @@ class Properties:
         """
         return self.content.__contains__(key)
 
-    def out(self, path: str = None, separator_char: str = '=', comment_char: str = '#' , comments=None,
+    def out(self, path: str = None, separator_char: str = '=', comment_char: str = '#', comments=None,
             comments_pos: str = 'top'):
         """Used to write a properties file
         :param path: string path as relative {used with a context manager}
@@ -175,7 +178,7 @@ class Properties:
 
 
 class PropertiesHandler:
-    properties_dict: dict
+    properties_dict: dict[str, Properties]
     curr_prop: Optional[Properties]
     directories_dict: dict
 
@@ -235,6 +238,10 @@ class PropertiesHandler:
         return self
 
     def setDirectory(self, absolute_path: str):
+        """Used to set a single directory as the container for all .properties files,
+         removes every other Properties objects stored
+        :param absolute_path: absolute path to directory
+        """
         if not absolute_path.endswith('\\'):
             absolute_path += '\\'
         self.directories_dict[absolute_path] = []
@@ -246,6 +253,9 @@ class PropertiesHandler:
                 self.addProperty(Properties(os.path.join(absolute_path + file)))
 
     def addDirectory(self, absolute_path: str):
+        """Used to add a directory to the Properties directories list
+        :param absolute_path: absolute path to directory
+        """
         if not absolute_path.endswith('\\'):
             absolute_path += '\\'
         self.directories_dict[absolute_path] = []
@@ -255,22 +265,28 @@ class PropertiesHandler:
                 self.addProperty(Properties(os.path.join(absolute_path + file)))
 
     def removeDirectories(self):
+        """Removes every directory added to the Directories list
+        Keeps externally added files"""
         for absolute_path in copy.deepcopy(list(self.directories_dict.keys())):
             self.removeDirectory(absolute_path)
 
     def removeDirectory(self, absolute_path: str):
+        """Removes a directory and it's properties objects from the directories list
+        :param absolute_path: absolute path to the directory
+        """
         if not absolute_path.endswith('\\'):
             absolute_path += '\\'
         if not absolute_path in self.directories_dict.keys():
             raise AttributeError(f"Directory '{absolute_path}' isn't registered.")
         for prop_path in self.directories_dict[absolute_path]:
-            prop = self._searchPropertyPath(prop_path)
+            prop = self._getPropertyByPath(prop_path)
             self.properties_dict.pop(list(self.properties_dict.keys())
                                      [list(self.properties_dict.values()).index(prop)])
         self.directories_dict.pop(absolute_path)
 
     def updateDirectories(self):
-        print('--------------------------------------')
+        """Reloads every Properties objects contained in a stored directory
+        and adds new files that were created after previous loading"""
         for relative_path in self.directories_dict.keys():
             for file in os.listdir(relative_path):
                 if file.endswith(".properties"):
@@ -278,11 +294,17 @@ class PropertiesHandler:
                     if fileName not in self.directories_dict[relative_path]:
                         self.addProperty(Properties(os.path.join(relative_path + file)))
                     else:
-                        print(self._searchPropertyPath(fileName))
-                        self._searchPropertyPath(fileName).reload()
-        print('--------------------------------------')
+                        self._getPropertyByPath(fileName).reload()
 
-    def _searchPropertyPath(self, path: str) -> Properties:
+    def updateAll(self):
+        """Reloads every Properties objects"""
+        for prop in self.properties_dict.values():
+            prop.reload()
+
+    def _getPropertyByPath(self, path: str) -> Properties:
+        """Used to get a Property object using it's absolute path
+        :param path: str, absolute path to the property
+        """
         for prop in self.properties_dict.values():
             if prop.getPath() == path:
                 return prop
@@ -310,7 +332,7 @@ class PropertiesHandler:
         name = kwargs.get('name', False)
         index = kwargs.get('index', False)
         prop: Optional[Properties] = None
-        if name:
+        if isinstance(name, str):
             if not self.properties_dict.__contains__(name):
                 raise KeyError(f'Unknown key {name}')
             prop = self.properties_dict.get(name)
@@ -323,8 +345,7 @@ class PropertiesHandler:
         if prop == self.curr_prop:
             curr_index = list(self.properties_dict.values()).index(prop)
             self.curr_prop = self.properties_dict.get(list(self.properties_dict.keys())
-                                                      [(
-                    curr_index - 1 if curr_index == len(self.properties_dict) else curr_index)])
+                                                      [(curr_index - 1 if curr_index == len(self.properties_dict) else curr_index)])
         return self.properties_dict.pop(list(self.properties_dict.keys())
                                         [list(self.properties_dict.values()).index(prop)])
 

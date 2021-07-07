@@ -2,6 +2,24 @@ import copy
 from collections import KeysView, ValuesView
 from typing import Optional
 import os
+from pathlib import Path
+
+
+#####     STATIC METHODS     #####
+def clean_path(uncleaned_path: str):
+    struct_path = copy.deepcopy(uncleaned_path).replace('/', '\\').split('\\') ## Just to be sure there are no problems with mutable stuff
+    i = 0
+    while i < len(struct_path):
+        if struct_path[i] == '..':
+            struct_path.pop(i)
+            struct_path.pop(i-1)
+            i-=2
+        i+=1
+        pass
+    path = struct_path[0]
+    for element in struct_path[1:len(struct_path)]:
+        path += '\\' + element
+    return path
 
 
 class Properties:
@@ -21,8 +39,9 @@ class Properties:
         self.prev_key = ''
         self.separator_char = kwargs.get('separator_char', '=')
         self.comment_char = kwargs.get('comment_char', '#')
+        is_absolute: bool = kwargs.get('is_absolute', False)
         if path:
-            self.load(path, self.separator_char, self.comment_char)
+            self.load(path, self.separator_char, self.comment_char, is_absolute)
 
     def __repr__(self):
         return f"<{self.__class__}, loaded_file: '{self.path if self.path else 'None'}'>"
@@ -33,13 +52,16 @@ class Properties:
         """
         return self.path
 
-    def load(self, path: str, separator_char: str = '=', comment_char: str = '#') -> 'Properties':
+    def load(self, path: str, separator_char: str = '=', comment_char: str = '#', is_absolute: bool = False) -> 'Properties':
         """ Loads Properties and stores them in a dict and returns the dict
         :param path: string path as relative {used with a context manager}
         :param comment_char: comment_char (default:#)
         :param separator_char: separator_char (default:=)
         :return: Dict of content
         """
+        if not is_absolute:
+            path = str(os.getcwd()) + ('\\' if not (path.startswith('\\') or path.startswith('/')) else '') + path
+        path = clean_path(path)
         self.content = {}
         self.prev_key = ''
         try:
@@ -73,7 +95,7 @@ class Properties:
         """Reloads the property file"""
         if not self.path:
             raise Exception('No path given, cannot reload properties')
-        self.load(self.path, self.separator_char, self.comment_char)
+        self.load(self.path, self.separator_char, self.comment_char, is_absolute=True)
 
     def getProperty(self, key: str) -> str:
         """Returns the key
@@ -146,7 +168,7 @@ class Properties:
         return self.content.__contains__(key)
 
     def out(self, path: str = None, separator_char: str = '=', comment_char: str = '#', comments=None,
-            comments_pos: str = 'top'):
+            comments_pos: str = 'top', is_absolute: bool = False):
         """Used to write a properties file
         :param path: string path as relative {used with a context manager}
         :param comment_char: comment_char (default:#)
@@ -160,6 +182,12 @@ class Properties:
                 path = self.path
             else:
                 return False
+        else:
+            if not is_absolute:
+                path = str(os.getcwd()) + (
+                    '\\' if not (path.startswith('\\') or path.startswith('/')) else '') + path
+        path = clean_path(path)
+        print(path)
         if comments is None:
             comments = []
         if not hasattr(comments, '__iter__'):
@@ -237,11 +265,16 @@ class PropertiesHandler:
                     continue
         return self
 
-    def setDirectory(self, absolute_path: str):
+    def setDirectory(self, relative_path: str, is_absolute: bool = False):
         """Used to set a single directory as the container for all .properties files,
          removes every other Properties objects stored
         :param absolute_path: absolute path to directory
         """
+        if not is_absolute:
+            absolute_path = str(os.getcwd()) + ('\\' if not (relative_path.startswith('\\') or relative_path.startswith('/')) else '') + relative_path
+        else:
+            absolute_path = relative_path
+        absolute_path = clean_path(absolute_path)
         if not absolute_path.endswith('\\'):
             absolute_path += '\\'
         self.directories_dict[absolute_path] = []
@@ -250,30 +283,41 @@ class PropertiesHandler:
         for file in os.listdir(absolute_path):
             if file.endswith(".properties"):
                 self.directories_dict[absolute_path].append(absolute_path + file)
-                self.addProperty(Properties(os.path.join(absolute_path + file)))
+                self.addProperty(Properties(os.path.join(absolute_path + file), is_absolute=True))
 
-    def addDirectory(self, absolute_path: str):
+    def addDirectory(self, relative_path: str, is_absolute: bool = False):
         """Used to add a directory to the Properties directories list
         :param absolute_path: absolute path to directory
         """
+        if not is_absolute:
+            absolute_path = str(os.getcwd()) + ('\\' if not (relative_path.startswith('\\') or relative_path.startswith('/')) else '') + relative_path
+        else:
+            absolute_path = relative_path
+        absolute_path = clean_path(absolute_path)
         if not absolute_path.endswith('\\'):
             absolute_path += '\\'
         self.directories_dict[absolute_path] = []
         for file in os.listdir(absolute_path):
             if file.endswith(".properties"):
                 self.directories_dict[absolute_path].append(absolute_path + file)
-                self.addProperty(Properties(os.path.join(absolute_path + file)))
+                self.addProperty(Properties(os.path.join(absolute_path + file), is_absolute=True))
 
     def removeDirectories(self):
         """Removes every directory added to the Directories list
         Keeps externally added files"""
+        print(f'{list(self.directories_dict.values())=}')
         for absolute_path in copy.deepcopy(list(self.directories_dict.keys())):
-            self.removeDirectory(absolute_path)
+            self.removeDirectory(absolute_path, is_absolute=True)
 
-    def removeDirectory(self, absolute_path: str):
+    def removeDirectory(self, relative_path: str, is_absolute: bool = False):
         """Removes a directory and it's properties objects from the directories list
         :param absolute_path: absolute path to the directory
         """
+        if not is_absolute:
+            absolute_path = str(os.getcwd()) + ('\\' if not (relative_path.startswith('\\') or relative_path.startswith('/')) else '') + relative_path
+        else:
+            absolute_path = relative_path
+        absolute_path = clean_path(absolute_path)
         if not absolute_path.endswith('\\'):
             absolute_path += '\\'
         if not absolute_path in self.directories_dict.keys():
@@ -292,7 +336,8 @@ class PropertiesHandler:
                 if file.endswith(".properties"):
                     fileName = relative_path + file
                     if fileName not in self.directories_dict[relative_path]:
-                        self.addProperty(Properties(os.path.join(relative_path + file)))
+                        self.addProperty(Properties(os.path.join(relative_path + file), is_absolute=True))
+                        self.directories_dict[relative_path].append(relative_path + file)
                     else:
                         self._getPropertyByPath(fileName).reload()
 
@@ -330,7 +375,9 @@ class PropertiesHandler:
         :return: the popped object
         """
         name = kwargs.get('name', False)
-        index = kwargs.get('index', False)
+        index = kwargs.get('index', 'False')
+        relative_path = kwargs.get('relative_path', False)
+        absolute_path = kwargs.get('absolute_path', False)
         prop: Optional[Properties] = None
         if isinstance(name, str):
             if not self.properties_dict.__contains__(name):
@@ -341,6 +388,21 @@ class PropertiesHandler:
                 raise IndexError(
                     f"index '{index}' out of bounds: max={len(self.properties_dict) - 1}, min={-len(self.properties_dict)}")
             prop = self.properties_dict.get(list(self.properties_dict.keys())[index])
+        elif isinstance(relative_path, str):
+            absolute_path = str(os.getcwd()) + (
+                '\\' if not (relative_path.startswith('\\') or relative_path.startswith('/')) else '') + relative_path
+            absolute_path = clean_path(absolute_path)
+            for prop in list(self.properties_dict.values()):
+                if prop.getPath() == absolute_path:
+                    prop = self.properties_dict.get(list(self.properties_dict.keys())[list(self.properties_dict.values()).index(prop)])
+                    break
+        elif isinstance(absolute_path, str):
+            absolute_path = clean_path(absolute_path)
+            for prop in list(self.properties_dict.values()):
+                if prop.getPath() == absolute_path:
+                    prop = self.properties_dict.get(
+                        list(self.properties_dict.keys())[list(self.properties_dict.values()).index(prop)])
+                    break
 
         if prop == self.curr_prop:
             curr_index = list(self.properties_dict.values()).index(prop)
@@ -354,7 +416,9 @@ class PropertiesHandler:
         :param kwargs: name or index of the object in the internal dict
         """
         name = kwargs.get('name', False)
-        index = kwargs.get('index', False)
+        index = kwargs.get('index', 'False')
+        relative_path = kwargs.get('relative_path', False)
+        absolute_path = kwargs.get('absolute_path', False)
         if name:
             if not self.properties_dict.__contains__(name):
                 raise KeyError(f'Unknown key {name}')
@@ -364,13 +428,30 @@ class PropertiesHandler:
                 raise IndexError(
                     f"index '{index}' out of bounds: max={len(self.properties_dict) - 1}, min={-len(self.properties_dict)}")
             self.curr_prop = self.properties_dict.get(list(self.properties_dict.keys())[index])
+        elif isinstance(relative_path, str):
+            absolute_path = str(os.getcwd()) + (
+                '\\' if not (relative_path.startswith('\\') or relative_path.startswith('/')) else '') + relative_path
+            absolute_path = clean_path(absolute_path)
+            for prop in list(self.properties_dict.values()):
+                if prop.getPath() == absolute_path:
+                    self.curr_prop = self.properties_dict.get(list(self.properties_dict.keys())[list(self.properties_dict.values()).index(prop)])
+                    break
+        elif isinstance(absolute_path, str):
+            absolute_path = clean_path(absolute_path)
+            for prop in list(self.properties_dict.values()):
+                if prop.getPath() == absolute_path:
+                    self.curr_prop = self.properties_dict.get(
+                        list(self.properties_dict.keys())[list(self.properties_dict.values()).index(prop)])
+                    break
 
     def getProperty(self, **kwargs):
         """Used to get a Properties object
         :param kwargs: name or index of the object in the internal dict
         """
         name = kwargs.get('name', False)
-        index = kwargs.get('index', False)
+        index = kwargs.get('index', 'False')
+        relative_path = kwargs.get('relative_path', False)
+        absolute_path = kwargs.get('absolute_path', False)
         if name:
             if not self.properties_dict.__contains__(name):
                 raise KeyError(f'Unknown key {name}')
@@ -380,6 +461,19 @@ class PropertiesHandler:
                 raise IndexError(
                     f"index '{index}' out of bounds: max={len(self.properties_dict) - 1}, min={-len(self.properties_dict)}")
             return self.properties_dict.get(list(self.properties_dict.keys())[index])
+        elif isinstance(relative_path, str):
+            absolute_path = str(os.getcwd()) + (
+                '\\' if not (relative_path.startswith('\\') or relative_path.startswith('/')) else '') + relative_path
+            absolute_path = clean_path(absolute_path)
+            for prop in list(self.properties_dict.values()):
+                if prop.getPath() == absolute_path:
+                    return self.properties_dict.get(list(self.properties_dict.keys())[list(self.properties_dict.values()).index(prop)])
+        elif isinstance(absolute_path, str):
+            absolute_path = clean_path(absolute_path)
+            for prop in list(self.properties_dict.values()):
+                if prop.getPath() == absolute_path:
+                    return self.properties_dict.get(
+                        list(self.properties_dict.keys())[list(self.properties_dict.values()).index(prop)])
 
     def switchUp(self):
         """Switches to the next Properties object in the internal dict (or to the first one if the last is passed)"""
@@ -416,3 +510,7 @@ class PropertiesHandler:
         :return: Current selected Properties object
         """
         return self.curr_prop
+
+    def testFunc(self):
+        import os
+        return os.getcwd()
