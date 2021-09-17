@@ -1,9 +1,10 @@
 from setuptools import setup, find_packages
 import os
 
+
 here = os.path.abspath(os.path.dirname(__file__))
 
-VERSION = '0.1.5'
+VERSION = '0.1.6'
 DESCRIPTION = 'A simple adaptation of java properties'
 LONG_DESCRIPTION = """A simple adaptation of java properties.
 Includes a Properties objects manager to help in managing multiple objects, useful for example if you have multi language support.
@@ -27,11 +28,9 @@ setup(
     install_requires=[],
     keywords=['python', 'properties', 'file manager'],
     classifiers=[
-        "Development Status :: 1 - Planning",
+        "Development Status :: 4 - Beta",
         "Intended Audience :: Developers",
         "Programming Language :: Python :: 3.9",
-        "Operating System :: Unix",
-        "Operating System :: MacOS :: MacOS X",
         "Operating System :: Microsoft :: Windows",
-    ]
-)
+        ]
+    )
