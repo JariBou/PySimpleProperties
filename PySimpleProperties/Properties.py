@@ -25,7 +25,7 @@ def clean_path(uncleaned_path: str):
 
 class Properties:
     content: dict
-    path: str
+    path: str ## self.path is absolute
     prev_key: str
     comment_char: str
     separator_char: str
@@ -202,9 +202,14 @@ class Properties:
             for key in self.content.keys():
                 f.write(key + separator_char + self.content[key] + '\n')
             if comments and comments_pos == 'bottom':
+
                 for comment in comments:
                     f.write(comment_char + comment + '\n')
             f.close()
+
+
+    def close(self, comments=None):
+        self.out(self.path, self.separator_char, self.comment_char, comments, comments_pos='top', is_absolute=True)
 
 
 class PropertiesHandler:
