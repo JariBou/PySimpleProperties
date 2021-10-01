@@ -19,8 +19,15 @@ import platform
 #         ph.addProperty(Properties('../tests/tests2/'+file, is_absolute=False))
 #//home/jari/PycharmProjects/PySimpleProperties/teststests/tests2/Entity1.properties
 #//home/jari/PycharmProjects/PySimpleProperties/teststests/tests2'
-ph.addDirectory('../tests/')
+ph.addDirectory('../tests//')
+ph.addDirectory('..///tests/tests2/')
+ph.addDirectory('..///tests/tests2/')
+print(f"{ph.directories_name_dict=}")
+print()
+ph.updateDirectory(name='tests')
+print(ph.directories_name_dict)
 print(ph.getContent())
+ph.removeProperty(relative_path="..//tests/tests2//Entity1.properties")
 
 # ph.changeProperty(name='prop2')
 # print(ph.get())
