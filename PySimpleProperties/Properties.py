@@ -26,7 +26,8 @@ def clean_path(uncleaned_path: str):
     if path == '':
         path = platformSeparator
     for element in struct_path[1:]:
-        path += platformSeparator + element
+        if element != '':
+            path += platformSeparator + element
     return path
 
 
@@ -120,7 +121,7 @@ class Properties:
     def reload(self):
         """Reloads the property file"""
         if not self.path:
-            raise Exception('No path given, cannot reload properties')
+            return print("No path given, cannot reload properties. Skipping...")
         self.load(self.path, self.separator_char, self.comment_char, is_absolute=True)
 
     def getProperty(self, key: str) -> str:
@@ -232,8 +233,9 @@ class Properties:
                     f.write(comment_char + comment + '\n')
             f.close()
 
-    def close(self, comments=None):
+    def close(self, comments=None):   ## TODO: Ambiguopus names and stuff, should destroy self?
         self.out(self.path, self.separator_char, self.comment_char, comments, comments_pos='top', is_absolute=True)
+        self.clear()
 
 
 class PropertiesHandler:
@@ -256,7 +258,7 @@ class PropertiesHandler:
         if properties_list:
             for prop in properties_list:
                 if not isinstance(prop, Properties):
-                    print(f"object {prop} is not an instance of {Properties.__class__}, skipping...")
+                    print(f"[Init Error] Object {prop} is not an instance of {Properties.__class__}, skipping...")
                     continue
                 self.addProperty(prop)
 
@@ -289,6 +291,8 @@ class PropertiesHandler:
                         self.addProperty(Properties(file[0], comment_char=file[1], separator_char=file[2]))
                     else:
                         self.addProperty(Properties(file[0], separator_char=file[1], comment_char=file[2]))
+                else:
+                    print(f'Invalid input file={file}')
 
             else:
                 try:
@@ -306,13 +310,13 @@ class PropertiesHandler:
         if not is_absolute:
             # absolute_path = str(os.getcwd()) + (
             #     '\\' if not (relative_path.startswith('\\') or relative_path.startswith('/')) else '') + relative_path
-            absolute_path = str(os.getcwd()) + clean_path(relative_path)
+            absolute_path = str(os.getcwd()) + self.platformSeparators + clean_path(relative_path)
         else:
             absolute_path = relative_path
         absolute_path = clean_path(absolute_path)
         if not absolute_path.endswith(self.platformSeparators):
             absolute_path += self.platformSeparators
-        self.directories_dict[absolute_path] = []
+        self.directories_dict = {absolute_path: []}
         self.properties_dict = {}
         self.curr_prop = None
         for file in os.listdir(absolute_path):
@@ -353,7 +357,7 @@ class PropertiesHandler:
         if not is_absolute:
             # absolute_path = str(os.getcwd()) + (
             #     '\\' if not (relative_path.startswith('\\') or relative_path.startswith('/')) else '') + relative_path
-            absolute_path = str(os.getcwd()) + clean_path(relative_path)
+            absolute_path = str(os.getcwd()) + self.platformSeparators + clean_path(relative_path)
         else:
             absolute_path = relative_path
         absolute_path = clean_path(absolute_path)
@@ -380,7 +384,7 @@ class PropertiesHandler:
                     else:
                         self._getPropertyByPath(fileName).reload()
 
-    def updateAll(self):
+    def reloadAll(self):
         """Reloads every Properties objects"""
         for prop in self.properties_dict.values():
             prop.reload()
@@ -430,7 +434,7 @@ class PropertiesHandler:
         elif isinstance(relative_path, str):
             # absolute_path = str(os.getcwd()) + (
             #     '\\' if not (relative_path.startswith('\\') or relative_path.startswith('/')) else '') + relative_path
-            absolute_path = str(os.getcwd()) + clean_path(relative_path)
+            absolute_path = str(os.getcwd()) + self.platformSeparators + clean_path(relative_path)
             absolute_path = clean_path(absolute_path)
             prop = self._getPropertyByPath(absolute_path)
             # for prop in list(self.properties_dict.values()):
@@ -481,7 +485,7 @@ class PropertiesHandler:
         elif isinstance(relative_path, str):
             # absolute_path = str(os.getcwd()) + (
             #     '\\' if not (relative_path.startswith('\\') or relative_path.startswith('/')) else '') + relative_path
-            absolute_path = str(os.getcwd()) + clean_path(relative_path)
+            absolute_path = str(os.getcwd()) + self.platformSeparators + clean_path(relative_path)
             absolute_path = clean_path(absolute_path)
             for prop in list(self.properties_dict.values()):
                 if prop.getPath() == absolute_path:
@@ -516,7 +520,8 @@ class PropertiesHandler:
         elif isinstance(relative_path, str):
             # absolute_path = str(os.getcwd()) + (
             #     '\\' if not (relative_path.startswith('\\') or relative_path.startswith('/')) else '') + relative_path
-            absolute_path = str(os.getcwd()) + clean_path(relative_path)
+            # TODO: add self.systemSeparator and stuff
+            absolute_path = str(os.getcwd()) + self.platformSeparators + clean_path(relative_path)
             absolute_path = clean_path(absolute_path)
             for prop in list(self.properties_dict.values()):
                 if prop.getPath() == absolute_path:
@@ -570,7 +575,7 @@ class PropertiesHandler:
         return os.getcwd()
 
     def closeProp(self, **kwargs):
-        """Used to close a Properties object
+        """Used to close a Properties object (basically clear it), and keep it in memory
             :param kwargs: name or index of the object in the internal dict
             """
         name = kwargs.get('name', False)
