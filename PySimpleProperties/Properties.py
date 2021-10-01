@@ -7,14 +7,15 @@ from pathlib import Path
 
 #####     STATIC METHODS     #####
 def clean_path(uncleaned_path: str):
-    struct_path = copy.deepcopy(uncleaned_path).replace('/', '\\').split('\\') ## Just to be sure there are no problems with mutable stuff
+    struct_path = copy.deepcopy(uncleaned_path).replace('/', '\\').split(
+        '\\')  ## Just to be sure there are no problems with mutable stuff
     i = 0
     while i < len(struct_path):
         if struct_path[i] == '..':
             struct_path.pop(i)
-            struct_path.pop(i-1)
-            i-=2
-        i+=1
+            struct_path.pop(i - 1)
+            i -= 2
+        i += 1
         pass
     path = struct_path[0]
     for element in struct_path[1:len(struct_path)]:
@@ -52,7 +53,8 @@ class Properties:
         """
         return self.path
 
-    def load(self, path: str, separator_char: str = '=', comment_char: str = '#', is_absolute: bool = False) -> 'Properties':
+    def load(self, path: str, separator_char: str = '=', comment_char: str = '#',
+             is_absolute: bool = False) -> 'Properties':
         """ Loads Properties and stores them in a dict and returns the dict
         :param path: string path as relative {used with a context manager}
         :param comment_char: comment_char (default:#)
@@ -271,7 +273,8 @@ class PropertiesHandler:
         :param absolute_path: absolute path to directory
         """
         if not is_absolute:
-            absolute_path = str(os.getcwd()) + ('\\' if not (relative_path.startswith('\\') or relative_path.startswith('/')) else '') + relative_path
+            absolute_path = str(os.getcwd()) + (
+                '\\' if not (relative_path.startswith('\\') or relative_path.startswith('/')) else '') + relative_path
         else:
             absolute_path = relative_path
         absolute_path = clean_path(absolute_path)
@@ -290,7 +293,8 @@ class PropertiesHandler:
         :param absolute_path: absolute path to directory
         """
         if not is_absolute:
-            absolute_path = str(os.getcwd()) + ('\\' if not (relative_path.startswith('\\') or relative_path.startswith('/')) else '') + relative_path
+            absolute_path = str(os.getcwd()) + (
+                '\\' if not (relative_path.startswith('\\') or relative_path.startswith('/')) else '') + relative_path
         else:
             absolute_path = relative_path
         absolute_path = clean_path(absolute_path)
@@ -314,7 +318,8 @@ class PropertiesHandler:
         :param absolute_path: absolute path to the directory
         """
         if not is_absolute:
-            absolute_path = str(os.getcwd()) + ('\\' if not (relative_path.startswith('\\') or relative_path.startswith('/')) else '') + relative_path
+            absolute_path = str(os.getcwd()) + (
+                '\\' if not (relative_path.startswith('\\') or relative_path.startswith('/')) else '') + relative_path
         else:
             absolute_path = relative_path
         absolute_path = clean_path(absolute_path)
@@ -394,7 +399,8 @@ class PropertiesHandler:
             absolute_path = clean_path(absolute_path)
             for prop in list(self.properties_dict.values()):
                 if prop.getPath() == absolute_path:
-                    prop = self.properties_dict.get(list(self.properties_dict.keys())[list(self.properties_dict.values()).index(prop)])
+                    prop = self.properties_dict.get(
+                        list(self.properties_dict.keys())[list(self.properties_dict.values()).index(prop)])
                     break
         elif isinstance(absolute_path, str):
             absolute_path = clean_path(absolute_path)
@@ -407,7 +413,8 @@ class PropertiesHandler:
         if prop == self.curr_prop:
             curr_index = list(self.properties_dict.values()).index(prop)
             self.curr_prop = self.properties_dict.get(list(self.properties_dict.keys())
-                                                      [(curr_index - 1 if curr_index == len(self.properties_dict) else curr_index)])
+                                                      [(
+                    curr_index - 1 if curr_index == len(self.properties_dict) else curr_index)])
         return self.properties_dict.pop(list(self.properties_dict.keys())
                                         [list(self.properties_dict.values()).index(prop)])
 
@@ -434,7 +441,8 @@ class PropertiesHandler:
             absolute_path = clean_path(absolute_path)
             for prop in list(self.properties_dict.values()):
                 if prop.getPath() == absolute_path:
-                    self.curr_prop = self.properties_dict.get(list(self.properties_dict.keys())[list(self.properties_dict.values()).index(prop)])
+                    self.curr_prop = self.properties_dict.get(
+                        list(self.properties_dict.keys())[list(self.properties_dict.values()).index(prop)])
                     break
         elif isinstance(absolute_path, str):
             absolute_path = clean_path(absolute_path)
@@ -467,7 +475,8 @@ class PropertiesHandler:
             absolute_path = clean_path(absolute_path)
             for prop in list(self.properties_dict.values()):
                 if prop.getPath() == absolute_path:
-                    return self.properties_dict.get(list(self.properties_dict.keys())[list(self.properties_dict.values()).index(prop)])
+                    return self.properties_dict.get(
+                        list(self.properties_dict.keys())[list(self.properties_dict.values()).index(prop)])
         elif isinstance(absolute_path, str):
             absolute_path = clean_path(absolute_path)
             for prop in list(self.properties_dict.values()):
