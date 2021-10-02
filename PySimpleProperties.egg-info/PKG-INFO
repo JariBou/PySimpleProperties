@@ -1,6 +1,6 @@
 Metadata-Version: 2.1
 Name: PySimpleProperties
-Version: 0.1.6
+Version: 0.1.9
 Summary: A simple adaptation of java properties
 Home-page: https://github.com/JariBou/PySimpleProperties
 Author: JariBou (Tomé Bourdié)
@@ -18,4 +18,5 @@ Classifier: Development Status :: 4 - Beta
 Classifier: Intended Audience :: Developers
 Classifier: Programming Language :: Python :: 3.9
 Classifier: Operating System :: Microsoft :: Windows
+Classifier: Operating System :: POSIX :: Linux
 Description-Content-Type: text/markdown

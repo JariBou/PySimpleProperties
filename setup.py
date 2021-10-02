@@ -4,10 +4,18 @@ import os
 
 here = os.path.abspath(os.path.dirname(__file__))
 
-VERSION = '0.1.9'
+VERSION = '0.2.0'
 DESCRIPTION = 'A simple adaptation of java properties'
 LONG_DESCRIPTION = """A simple adaptation of java properties.
 Includes a Properties objects manager to help in managing multiple objects, useful for example if you have multi language support.
+
+New in Version 0.2.0:
+- Linux support
+- Comments in-file Support
+- Directory Support enhanced
+
+**Tutorial to come**
+
 GitHub repo: https://github.com/JariBou/PySimpleProperties
 Feel free to contact me at my mail: bourdietome@gmail.com
 
