@@ -8,10 +8,10 @@ import platform
 #####     STATIC METHODS     #####
 def clean_path(uncleaned_path: str):
     platformSeparator = getPlatformSeparators()
-    if not (uncleaned_path.endswith("/") or uncleaned_path.endswith("\\")):
-        uncleaned_path += platformSeparator
-    # rPath = copy.deepcopy(uncleaned_path).replace('\\', '/')
-    struct_path = copy.deepcopy(uncleaned_path).replace('\\', '/').split('/')
+    uncleaned_path = copy.deepcopy(uncleaned_path).replace('/', '\\')
+    if not uncleaned_path.endswith("\\"):
+        uncleaned_path += "\\"
+    struct_path = uncleaned_path.split('\\')
     i = 0
     _cleaner(struct_path, 0, first=True)
     while i < len(struct_path):
@@ -20,10 +20,7 @@ def clean_path(uncleaned_path: str):
             struct_path.pop(i)
         else:
             i += 1
-    if struct_path:
-        path = struct_path[0]
-    else:
-        path = platformSeparator
+    path = struct_path[0] if struct_path else platformSeparator
 
     for element in struct_path[1:]:
         if element != '':
@@ -47,11 +44,14 @@ def getPlatformSeparators():
     elif system == 'Windows':
         return '\\'
     elif system == 'Darwin':
+        raise SystemError(f'Platform {system} (Mac OS) not supported!')
+    else:
         raise SystemError(f'Platform {system} not supported!')
 
 
 class Properties:
     content: dict
+    comments: dict   ## Key is line number
     path: str  ## self.path is absolute
     prev_key: str
     comment_char: str
@@ -66,6 +66,7 @@ class Properties:
         :key is_absolute: boolean of whether or not the path given is absolute
         """
         self.content = {}
+        self.comments = {}
         self.path = ''
         self.prev_key = ''
         self.separator_char = kwargs.get('separator_char', '=')
@@ -102,7 +103,7 @@ class Properties:
         try:
             with open(path, 'r') as f:
                 strContent = f.readlines()
-                for line in strContent:
+                for index, line in enumerate(strContent):
                     line = line.replace('\n', '').strip()
                     if self.prev_key != '':
                         self.content[self.prev_key] += ' ' + line
@@ -110,6 +111,9 @@ class Properties:
                     elif line[0] != comment_char:
                         key, key_value = line.split(separator_char)
                         self.content[key] = key_value
+
+                    elif line[0] == comment_char:
+                        self.comments[index] = line[1:].strip()
 
                     if line[-1] == '\\':
                         self.prev_key = key if self.prev_key == '' else self.prev_key
@@ -229,11 +233,19 @@ class Properties:
             raise AttributeError(
                 f"Comments type is not valid: not iterable. Given={comments.__class__} | Should be a list")
         with open(path, 'w') as f:
+            commentsSize = len(comments)
             if comments and comments_pos == 'top':
                 for comment in comments:
                     f.write(comment_char + comment + '\n')
+            lineNumber = commentsSize
             for key in self.content.keys():
+                if self.comments.__contains__(lineNumber):
+                    print(self.comments.get(lineNumber))
+                    f.write(comment_char+' '+self.comments.get(lineNumber)+'\n')
+                    lineNumber += 1
                 f.write(key + separator_char + self.content[key] + '\n')
+                lineNumber += 1
+
             if comments and comments_pos == 'bottom':
 
                 for comment in comments:
@@ -341,6 +353,7 @@ class PropertiesHandler:
         :param is_absolute: boolean of whether or not the path given is absolute
         :param name: name to be given to the directory, if not: defaults to dir name
         """
+
         if not is_absolute:
             absolute_path = str(os.getcwd()) + self.platformSeparators + clean_path(relative_path)
         else:
