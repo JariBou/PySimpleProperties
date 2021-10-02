@@ -105,6 +105,8 @@ class Properties:
                 strContent = f.readlines()
                 for index, line in enumerate(strContent):
                     line = line.replace('\n', '').strip()
+                    if not line:
+                        continue
                     if self.prev_key != '':
                         self.content[self.prev_key] += ' ' + line
 
@@ -218,41 +220,44 @@ class Properties:
         :param is_absolute: boolean of whether or not the path given is absolute
         """
         if path is None:
-            if self.path != '':
-                path = self.path
-            else:
-                return False
+            if self.path == '':
+                return print(f"No Path given nor set. Skipping...")
+            path = self.path
         else:
             if not is_absolute:
-                path = str(os.getcwd()) + clean_path(path)
+                path = str(os.getcwd()) + self.platformSeparator + clean_path(path)
         path = clean_path(path)
-        print(path)
         if comments is None:
             comments = []
-        if not hasattr(comments, '__iter__'):
-            raise AttributeError(
-                f"Comments type is not valid: not iterable. Given={comments.__class__} | Should be a list")
+        elif not hasattr(comments, '__iter__'):
+            return print(f"Comments type is not valid: not iterable. Given={comments.__class__} | Should be a list")
+
         with open(path, 'w') as f:
-            commentsSize = len(comments)
             if comments and comments_pos == 'top':
                 for comment in comments:
-                    f.write(comment_char + comment + '\n')
-            lineNumber = commentsSize
-            for key in self.content.keys():
+                    f.write(comment_char + ' ' + comment + '\n')
+            lineNumber, keyIndex, lastComIndex = 0, 0, 0
+            while keyIndex < len(self.content.keys()):
                 if self.comments.__contains__(lineNumber):
-                    print(self.comments.get(lineNumber))
                     f.write(comment_char+' '+self.comments.get(lineNumber)+'\n')
-                    lineNumber += 1
-                f.write(key + separator_char + self.content[key] + '\n')
+                    lastComIndex += 1
+                else:
+                    key = list(self.content.keys())[keyIndex]
+                    f.write(key + separator_char + self.content[key] + '\n')
+                    keyIndex += 1
                 lineNumber += 1
 
-            if comments and comments_pos == 'bottom':
+            if len(self.comments.keys()) > lastComIndex:
+                for key in list(self.comments.keys())[lastComIndex:]:
+                    f.write(comment_char + ' ' + self.comments.get(key) + '\n')
 
+            if comments and comments_pos == 'bottom':
                 for comment in comments:
-                    f.write(comment_char + comment + '\n')
+                    f.write(comment_char + ' ' + comment + '\n')
             f.close()
 
     def close(self, comments=None):
+        """Writes file to its path (Basically updates it) and clears the property so that it can be reused"""
         self.out(self.path, self.separator_char, self.comment_char, comments, comments_pos='top', is_absolute=True)
         self.clear()
 
@@ -262,7 +267,7 @@ class PropertiesHandler:
     curr_prop: Optional[Properties]
     directories_dict: dict[str, list[str]]
     directories_name_dict: dict[str, str]
-    platformSeparators: str
+    platformSeparator: str
 
     def __init__(self, properties_list=None):
         """Creates a 'PropertiesHandler' object used to manage and switch easily between Properties objects,
@@ -275,7 +280,7 @@ class PropertiesHandler:
         self.directories_dict = {}
         self.directories_name_dict = {}
         self.curr_prop = None
-        self.platformSeparators = getPlatformSeparators()
+        self.platformSeparator = getPlatformSeparators()
         if properties_list:
             for prop in properties_list:
                 if not isinstance(prop, Properties):
@@ -333,12 +338,12 @@ class PropertiesHandler:
         :param is_absolute: boolean of whether or not the path given is absolute
         """
         if not is_absolute:
-            absolute_path = str(os.getcwd()) + self.platformSeparators + clean_path(relative_path)
+            absolute_path = str(os.getcwd()) + self.platformSeparator + clean_path(relative_path)
         else:
             absolute_path = relative_path
         absolute_path = clean_path(absolute_path)
-        if not absolute_path.endswith(self.platformSeparators):
-            absolute_path += self.platformSeparators
+        if not absolute_path.endswith(self.platformSeparator):
+            absolute_path += self.platformSeparator
         self.directories_dict = {absolute_path: []}
         self.properties_dict = {}
         self.curr_prop = None
@@ -355,19 +360,19 @@ class PropertiesHandler:
         """
 
         if not is_absolute:
-            absolute_path = str(os.getcwd()) + self.platformSeparators + clean_path(relative_path)
+            absolute_path = str(os.getcwd()) + self.platformSeparator + clean_path(relative_path)
         else:
             absolute_path = relative_path
         absolute_path = clean_path(absolute_path)
 
         if not name:
-            name = absolute_path.split(self.platformSeparators)[-1]
+            name = absolute_path.split(self.platformSeparator)[-1]
             if self.directories_name_dict.__contains__(name):
                 print(f"Directory '{name}' already loaded. Reloading...")
                 return self.updateDirectory(absolute_path=self.directories_name_dict.get(name))
 
-        if not absolute_path.endswith(self.platformSeparators):
-            absolute_path += self.platformSeparators
+        if not absolute_path.endswith(self.platformSeparator):
+            absolute_path += self.platformSeparator
         self.directories_name_dict[name] = absolute_path
         self.directories_dict[absolute_path] = []
         for file in os.listdir(absolute_path):
@@ -399,11 +404,11 @@ class PropertiesHandler:
             absolute_path = self.directories_name_dict.pop(str(name))
 
         elif relative_path:
-            absolute_path = str(os.getcwd()) + self.platformSeparators + clean_path(str(relative_path))
+            absolute_path = str(os.getcwd()) + self.platformSeparator + clean_path(str(relative_path))
 
         absolute_path = clean_path(absolute_path)
-        if not absolute_path.endswith(self.platformSeparators):
-            absolute_path += self.platformSeparators
+        if not absolute_path.endswith(self.platformSeparator):
+            absolute_path += self.platformSeparator
         if absolute_path not in self.directories_dict.keys():
             raise AttributeError(f"Directory '{absolute_path}' isn't registered.")
         for prop_path in self.directories_dict[absolute_path]:
@@ -438,9 +443,9 @@ class PropertiesHandler:
             absolute_path = self.directories_name_dict.pop(str(name))
 
         elif relative_path:
-            absolute_path = str(os.getcwd()) + self.platformSeparators + clean_path(str(relative_path))
+            absolute_path = str(os.getcwd()) + self.platformSeparator + clean_path(str(relative_path))
 
-        absolute_path = clean_path(absolute_path) + self.platformSeparators
+        absolute_path = clean_path(absolute_path) + self.platformSeparator
         print(f"\nUpdating files at {absolute_path}")
         for file in os.listdir(absolute_path):
             if file.endswith(".properties"):
@@ -502,7 +507,7 @@ class PropertiesHandler:
                     f"index '{index}' out of bounds: max={len(self.properties_dict) - 1}, min={-len(self.properties_dict)}")
             prop = self.properties_dict.get(list(self.properties_dict.keys())[index])
         elif isinstance(relative_path, str):
-            absolute_path = str(os.getcwd()) + self.platformSeparators + clean_path(relative_path)
+            absolute_path = str(os.getcwd()) + self.platformSeparator + clean_path(relative_path)
             absolute_path = clean_path(absolute_path)
             prop = self._getPropertyByPath(absolute_path)
         elif isinstance(absolute_path, str):
@@ -520,7 +525,7 @@ class PropertiesHandler:
             return self.properties_dict.pop(list(self.properties_dict.keys())
                                             [list(self.properties_dict.values()).index(prop)])
         except ValueError:
-            return print(f"Property {absolute_path.split(self.platformSeparators)[-1]} not loaded. Skipping...")
+            return print(f"Property {absolute_path.split(self.platformSeparator)[-1]} not loaded. Skipping...")
 
     def changeProperty(self, **kwargs):
         """Used to change between Properties objects
@@ -543,7 +548,7 @@ class PropertiesHandler:
                     f"index '{index}' out of bounds: max={len(self.properties_dict) - 1}, min={-len(self.properties_dict)}")
             self.curr_prop = self.properties_dict.get(list(self.properties_dict.keys())[index])
         elif isinstance(relative_path, str):
-            absolute_path = str(os.getcwd()) + self.platformSeparators + clean_path(relative_path)
+            absolute_path = str(os.getcwd()) + self.platformSeparator + clean_path(relative_path)
             absolute_path = clean_path(absolute_path)
             for prop in list(self.properties_dict.values()):
                 if prop.getPath() == absolute_path:
@@ -579,7 +584,7 @@ class PropertiesHandler:
                     f"index '{index}' out of bounds: max={len(self.properties_dict) - 1}, min={-len(self.properties_dict)}")
             return self.properties_dict.get(list(self.properties_dict.keys())[index])
         elif isinstance(relative_path, str):
-            absolute_path = str(os.getcwd()) + self.platformSeparators + clean_path(relative_path)
+            absolute_path = str(os.getcwd()) + self.platformSeparator + clean_path(relative_path)
             absolute_path = clean_path(absolute_path)
             for prop in list(self.properties_dict.values()):
                 if prop.getPath() == absolute_path:
@@ -650,8 +655,7 @@ class PropertiesHandler:
                     f"index '{index}' out of bounds: max={len(self.properties_dict) - 1}, min={-len(self.properties_dict)}")
             prop = self.properties_dict.get(list(self.properties_dict.keys())[index])
         elif isinstance(relative_path, str):
-            absolute_path = str(os.getcwd()) + (
-                '\\' if not (relative_path.startswith('\\') or relative_path.startswith('/')) else '') + relative_path
+            absolute_path = str(os.getcwd()) + self.platformSeparator + relative_path
             absolute_path = clean_path(absolute_path)
             for prop in list(self.properties_dict.values()):
                 if prop.getPath() == absolute_path:
