@@ -367,7 +367,7 @@ class PropertiesHandler:
 
         if not name:
             name = absolute_path.split(self.platformSeparator)[-1]
-            if self.directories_name_dict.__contains__(name):
+            if self.directories_name_dict.__contains__(name):  ##TODO: multiple directories may have the same name but are not on the same path
                 print(f"Directory '{name}' already loaded. Reloading...")
                 return self.updateDirectory(absolute_path=self.directories_name_dict.get(name))
 
