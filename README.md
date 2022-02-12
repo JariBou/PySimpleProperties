@@ -10,6 +10,8 @@ New in Version 0.2.0:
 
 **Tutorial to come**
 
+install via cmd with command  "pip install PySimpleProperties"
+
 This is my first module so be indulgent with things that aren't optimised and feel free to report them to me!
 
 
